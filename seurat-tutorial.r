@@ -1,4 +1,4 @@
-# Seurat tutorial: vignette for guided clustering 
+# Seurat tutorial: vignette for guided clustering
 # Can be found at https://satijalab.org/seurat/articles/pbmc3k_tutorial.html
 
 library(dplyr)
@@ -10,9 +10,9 @@ setwd("C:/Users/Micha/Documents/data_analysis/seurat_environment")
 
 # SECTION 1: Load the PBMC dataset
 pbmc_data <- Read10X(data.dir = "data/filtered_gene_bc_matrices/hg19")
-#pbmc_data <- Read10X(data.dir = "../data/filtered_gene_bc_matrices/hg19")
+# pbmc_data <- Read10X(data.dir = "../data/filtered_gene_bc_matrices/hg19")
 
-# Initialize the Seurat object with the raw (non-normalized data). 
+# Initialize the Seurat object with the raw (non-normalized data).
 pbmc <- CreateSeuratObject(
     counts = pbmc_data, # raw count data
     project = "pbmc3k", # project name of Seurat object
@@ -35,12 +35,12 @@ dev.off()
 # for anything calculated by the object, i.e. columns in object metadata, PC scores etc.
 plot1 <- FeatureScatter(
     pbmc, 
-    feature1 = "nCount_RNA", 
+    feature1 = "nCount_RNA",
     feature2 = "percent.mt"
 )
 plot2 <- FeatureScatter(
     pbmc, 
-    feature1 = "nCount_RNA", 
+    feature1 = "nCount_RNA",
     feature2 = "nFeature_RNA"
 )
 plot1 + plot2
@@ -78,7 +78,7 @@ all.genes <- rownames(pbmc) # needed for heatmaps
 pbmc <- ScaleData(pbmc, features = all.genes)
 
 # SECTION 6: Perform linear dimensional reduction w/ PCA
-pbmc <- RunPCA(pbmc, features = Variablefeatures(object = pbmc))
+pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc))
 
 # Examine and visualize PCA results a few different ways
 # Method 1
@@ -92,7 +92,7 @@ DimHeatmap(pbmc, dims = 1, cells = 500, balanced = TRUE)
 # Method 5
 DimHeatmap(pbmc, dims = 1:15, cells = 500, balanced = TRUE)
 
-# SECTION 7: Determine the 'dimensionality' of the dataset 
+# SECTION 7: Determine the 'dimensionality' of the dataset
 # NOTE: This process can take a long time for big datasets, comment out for expediency. More
 # approximate techniques such as those implemented in ElbowPlot() can be used to reduce
 # computation time
@@ -118,13 +118,13 @@ saveRDS(pbmc, file = "results/pbmc_tutorial.rds")
 
 # SECTION 10: Finding differentially expressed features (cluster biomarkers)
 # Find markers for every cluster compared to all remaining cells, report only the positive ones
-pbmc.markers <- FindAllMarkers(pbmc, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
-# NOTE: %>% is a forward pipe operator. 
-pbmc.markers %>%
+pbmc_markers <- FindAllMarkers(pbmc, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+# NOTE: %>% is a forward pipe operator.
+pbmc_markers %>%
     group_by(cluster) %>%
     slice_max(n = 2, order_by = avg_log2FC)
 
-#Plot by gene expression 
+#Plot by gene expression
 FeaturePlot(pbmc, features = c("MS4A1", "GNLY", "CD3E", "CD14", "FCER1A", "FCGR3A", "LYZ", "PPBP",
     "CD8A"))
 
@@ -135,3 +135,4 @@ new_cluster_ids <- c("Naive CD4 T", "CD14+ Mono", "Memory CD4 T", "B", "CD8 T", 
 names(new_cluster_ids) <- levels(pbmc)
 pbmc <- RenameIdents(pbmc, new_cluster_ids)
 DimPlot(pbmc, reduction = "umap", label = TRUE, pt.size = 0.5) + NoLegend()
+saveRDS(pbmc, file = "results/pbmc3k_final.rds")
