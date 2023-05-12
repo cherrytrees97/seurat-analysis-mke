@@ -3,7 +3,7 @@
 In some cases, only the BAM files can be downloaded from the SRA/ENA (e.g. https://www.ebi.ac.uk/ena/browser/view/PRJEB23051?show=related-records). In these situations, `CellRanger` has a tool that is specifically made to convert BAM files back into FASTQ files for the rest of the `CellRanger` pipeline. Refer to [here](https://support.10xgenomics.com/docs/bamtofastq) for more information. To run the script: 
 
 ```
-cellranger bam2fastq /path/to/bam/file.bam /path/to/output/folder
+cellranger bam2fastq --nthreads 16 /path/to/bam/file.bam /path/to/output/folder
 ```
 
 Note that the output folder cannot exist or else this will crash. 
