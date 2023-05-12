@@ -2,7 +2,7 @@
 # Pipeline is adapted from the PBMC3K vignette.
 # Can be found at https://satijalab.org/seurat/articles/pbmc3k_tutorial.html
 
-#LIBRARY imports
+# LIBRARY imports
 library(ggplot2)
 library(dplyr)
 library(Seurat)
@@ -69,11 +69,11 @@ ggsave(
 #Get cells where # genes is between 1000 and 6000, and % of mitochondrial genes < 5
 cb_vlnplot
 min_nFeature_RNA <- 1000
-max_nFeature_RNA <- 6000
+max_nFeature_RNA <- 5000
 
 cb_data <- subset(
     cb_data,
-    subset = (nFeature_RNA > min_nFeature_RNA) & (nFeature_RNA < max_nFeature_RNA) & (percent.mt < 5)
+    subset = (nFeature_RNA > min_nFeature_RNA) & (nFeature_RNA < max_nFeature_RNA)
 )
 
 # SECTION 3: Normalizing Data
