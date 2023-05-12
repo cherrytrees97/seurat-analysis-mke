@@ -3,17 +3,28 @@ library(dplyr)
 library(Seurat)
 library(patchwork)
 
-ctrl_cb <- readRDS('results/ctrl_cb.rds')
+cb_data <- readRDS("results/cb_data.rds")
 
 #Plot by gene expression
-umap_gene_plot <- FeaturePlot(ctrl_cb, features = c("Sox2", "Msx1", "Msx2", "Msx3", "Atoh1", "Ptf1a"))
+umap_gene_plot <- FeaturePlot(cb_data, features = c(
+    "Wls",
+    "Ascl1",
+    "Neurog1",
+    "Neurog2",
+    "Atoh1",
+    "Ptf1a",
+    "Sox2",
+    "Msx1",
+    "Msx2",
+    "Msx3"
+))
 ggsave(
     "umap_gene_plot.png",
     plot = umap_gene_plot,
     device = "png",
     path = "results",
     units = "in",
-    width = 8,
-    height = 8,
-    bg = "white",
+    width = 16,
+    height = 16,
+    bg = "white"
 )
