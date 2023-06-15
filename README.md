@@ -7,3 +7,4 @@
 3. Install Seurat using `renv::install("Seurat")`
 4. Run `renv::use_python()` and select the appropriate Python install you want to setup in the virual environment. 
 5. Install UMAP-learn using `reticulate::py_install("umap-learn")`
+6. Install limma using `renv::install("limma")` this isnt correct... need to fix. 
