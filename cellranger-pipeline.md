@@ -1,6 +1,6 @@
 # CellRanger pipeline for processing FASTQ files
 ## 0: Converting BAM files back into FASTQ files 
-In some cases, only the BAM files can be downloaded from the SRA/ENA (e.g. https://www.ebi.ac.uk/ena/browser/view/PRJEB23051?show=related-records). In these situations, `CellRanger` has a tool that is specifically made to convert BAM files back into FASTQ files for the rest of the `CellRanger` pipeline. Refer to [here](https://support.10xgenomics.com/docs/bamtofastq) for more information. To run the script: 
+In some cases, only the BAM files can be downloaded from the SRA/ENA (e.g. https://www.ebi.ac.uk/ena/browser/view/PRJEB23051?show=related-records). To download the files, refer to the guide [here](https://www.ebi.ac.uk/ena/browser/downloading-data). In these situations, `CellRanger` has a tool that is specifically made to convert BAM files back into FASTQ files for the rest of the `CellRanger` pipeline. Refer to [here](https://support.10xgenomics.com/docs/bamtofastq) for more information. To run the script: 
 
 ```
 cellranger bamtofastq --nthreads 16 /path/to/bam/file.bam /path/to/output/folder
@@ -18,7 +18,7 @@ The reference files as well as test data can be found [here](https://support.10x
 
 To run the pipeline, enter the following command into the terminal: 
 ```
-cellranger count --id=id_name --fastqs=/path/to/fastq/ --sample=fastq_prefix --transcriptome=/path/to/transcriptome
+cellranger count --id id_name --fastqs /path/to/fastq/ --sample fastq_prefix --transcriptome /path/to/transcriptome
 ```
 `--id` is the name that the output folder will be given. `--sample` is the prefix (delimited by underscores) the FASTQ files that your sample has. If not specified, all of the files will be included in the count. `--transcriptome` is the path to the reference transcriptome folder that you downloaded and decompressed earlier. 
 
