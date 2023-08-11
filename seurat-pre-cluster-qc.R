@@ -1,3 +1,11 @@
+# ==============================================================================
+# seurat-pre-cluster-qc.R : scripts to run QC analysis on scRNA-seq datasets with
+#                           Seurat. 
+# IMPORTANT! : Set SECTION 0 parameters prior to starting for proper pathing.
+# IMPORTANT! : Run only SECTION 0 - 3, then review plots and set the correct
+#              QC parameters before proceeding.
+# ==============================================================================
+
 # LIBRARY imports
 library(dplyr)
 library(Seurat)
@@ -22,12 +30,16 @@ save_plot <- function(name, output_path, plot_obj){
 wd <- "~/data_analysis/cerebellum-scRNA-seq-analysis"
 setwd(wd)
 # SET: names of datasets to process
-dataset_names <- c("E10A","E10B")
+dataset_names <- c(
+  "E10_vladoiu"
+)
 # SET: job name
-job_name <- "E10_merged"
+job_name <- "E10_vladoiu"
 # Create results directory
 results <- paste(wd, "results", job_name, sep="/")
 dir.create(results)
+
+datasets <- c()
 
 # SECTION 1: DATA IMPORT
 for (name in dataset_names) {
@@ -39,14 +51,19 @@ for (name in dataset_names) {
     min.cells = 3, # filter: only features with at least 3 cells
     min.features = 200, # filter: only cells with at least 200 features
   )
-  assign(name, seurat_obj)
+  #assign(name, seurat_obj)
+  datasets <- append(datasets, seurat_obj)
 }
 #SET: all Seurat objects to merge. Object name = dataset name
-merged_seurat <- merge(
-  x = E10A,
-  y = E10B,
-  add.cell.id = dataset_names
-)
+if (length(datasets) > 1) {
+  merged_seurat <- merge(
+    x = datasets[[1]],
+    y = datasets[c(2:length(datasets))],
+    add.cell.id = dataset_names
+  )
+} else {
+  merged_seurat <- datasets[[1]]
+}
 
 head(merged_seurat@meta.data)
 tail(merged_seurat@meta.data)
@@ -61,10 +78,19 @@ merged_seurat$mito_ratio <- merged_seurat@meta.data$mito_ratio / 100
 metadata <- merged_seurat@meta.data
 # Add cell IDs to metadata
 metadata$cells <- rownames(metadata)
-# Create sample column 
+# Create sample column
 metadata$sample <- NA
-metadata$sample[which(str_detect(metadata$cells, "^E10A_"))] <- "E10A"
-metadata$sample[which(str_detect(metadata$cells, "^E10B_"))] <- "E10B"
+
+#Assign sample identity to each cell
+if (length(dataset_names) > 1) {
+  for (i in 1:length(dataset_names)) {
+    regex_statement = paste0("^", dataset_names[[i]], "_")
+    metadata$sample[which(str_detect(metadata$cells, regex_statement))] <- dataset_names[i]
+  }  
+} else {
+  metadata$sample <- metadata$orig.ident
+}
+
 # Update Seurat object with metadata
 merged_seurat@meta.data <- metadata
 
@@ -76,7 +102,6 @@ cell_count_plot <- ggplot(metadata, aes(x=sample, fill=sample)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
   theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
   ggtitle("NCells")
-cell_count_plot
 save_plot(paste(job_name, "cell_counts.png", sep = "_"), results, cell_count_plot)
 
 # 2) UMI counts (transcripts) per cell
@@ -85,7 +110,8 @@ umi_per_cell_plot <- ggplot(metadata, aes(color=sample, x=nCount_RNA, fill=sampl
   scale_x_log10() +
   theme_classic() + 
   ylab("Cell density") +
-  geom_vline(xintercept = 500)
+  geom_vline(xintercept = 500) +
+  geom_vline(xintercept = 20000)
 save_plot(paste(job_name, "UMI_per_cell.png", sep = "_"), results, umi_per_cell_plot)
 
 # 3) Genes detected per cell
@@ -108,7 +134,7 @@ mito_ratio_plot <- ggplot(metadata, aes(x=mito_ratio, color=sample, fill=sample)
   geom_density(alpha = 0.2) +
   scale_x_log10() +
   theme_classic() +
-  geom_vline(xintercept = 0.2)
+  geom_vline(xintercept = 0.05)
 save_plot(paste(job_name, "mito_ratio.png", sep = "_"), results, mito_ratio_plot)
 
 #6 Scatterplot - mito-ratio
@@ -124,16 +150,26 @@ scatter_summary <- ggplot(metadata, aes(x=nCount_RNA, y=nFeature_RNA, color=mito
   facet_wrap(~sample)
 save_plot(paste(job_name, "qc_summary.png", sep = "_"), results, scatter_summary)
 
+# STOP! STOP! STOP! STOP! READ!
+# ==============================================================================
 # SECTION 4: FILTERING
 # NOTE: view the plots in previous code before continuing here. 
-# Apply filtering based on parameters
+# Apply filtering based on observed QC plots.
+# ==============================================================================
+min_UMI_count <- 1200
+max_UMI_count <- 20000
+min_gene_count <- 500
+min_log10_genes_UMI <- 0.80
+max_mito_ratio <- 0.05
+
+
 filtered_seurat <- subset(
   x = merged_seurat,
-  subset = (nCount_RNA >= 1200) &
-    (nCount_RNA <= 15000) &
-    (nFeature_RNA >= 500) &
-    (log10_genes_per_UMI > 0.80) &
-    (mito_ratio < 0.05)
+  subset = (nCount_RNA >= min_UMI_count) &
+    (nCount_RNA <= max_UMI_count) &
+    (nFeature_RNA >= min_gene_count) &
+    (log10_genes_per_UMI > min_log10_genes_UMI) &
+    (mito_ratio < max_mito_ratio)
 )
 
 #Extract counts

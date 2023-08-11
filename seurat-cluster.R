@@ -1,4 +1,7 @@
-# Single-cell RNA-seq - clustering - no integration because same time point.
+# ==============================================================================
+# seurat-cluster.R : scripts to run Seurat analysis on scRNA-seq datasets.
+# IMPORTANT! : Set SECTION 0 parameters prior to starting for proper pathing.
+# ==============================================================================
 
 # Load libraries
 library(Seurat)
@@ -11,17 +14,19 @@ library(cowplot)
 wd <- "~/data_analysis/cerebellum-scRNA-seq-analysis"
 setwd(wd)
 # SET: names of datasets to process
-dataset_names <- c("E10A","E10B")
+dataset_names <- c(
+  "E10_vladoiu"
+)
 # SET: job name
-job_name <- "E10_merged"
+job_name <- "E10_vladoiu"
 # Create results directory
 results <- paste(wd, "results", job_name, sep="/")
 dir.create(results)
-
+# Read output from the QC scripts
 rds_path <- paste0(results, "/", job_name, "_qc.rds")
 merged_seurat_obj <- readRDS(rds_path)
 
-#Load the cell cycle data, add it to Seurat obj metadata
+# OPTIONAL: LOAD CELL CYCLE DATA
 load(paste0(wd, "/data/mus_musculus_g2m_s_phase_genes.RData"))
 merged_seurat_obj <- CellCycleScoring(merged_seurat_obj, g2m.features = g2m_genes, s.features = s_genes)
 
@@ -41,7 +46,7 @@ ggsave(
   device = "png",
   path = results,
   units = "in",
-  width = 16,
+  width = 48,
   height = 16,
   bg = "white",
 )
@@ -56,9 +61,12 @@ merged_seurat_obj <- RunUMAP(merged_seurat_obj,
 merged_seurat_obj <- FindNeighbors(object = merged_seurat_obj, 
                                    dims = 1:40)
 
-# Determine the clusters for various resolutions                                
+# Determine the clusters for various resolutions
+# Check some resolutions here just to see which produce the best clusters
 merged_seurat_obj <- FindClusters(object = merged_seurat_obj,
                                   resolution = c(0.4, 0.6, 0.8, 1.0, 1.4))
+Idents(object = merged_seurat_obj) <- "SCT_snn_res.0.8"
+
 
 # Plot the UMAP
 umap_plot <- DimPlot(merged_seurat_obj,
@@ -76,17 +84,6 @@ ggsave(
   bg = "white",
 )
 
-#For Joanna
-markers_of_interest = c(
-  "Atoh1",
-  "Ptf1a",
-  "Msx1",
-  "Msx2",
-  "Msx3",
-  "Wls",
-  "Lmx1a"
-)
-
 # Markers
 markers = c(
   "Hes5",
@@ -102,22 +99,6 @@ markers = c(
   "Lmx1a",
   "Meis2",
   "Mki67"
-)
-msx_genes = c(
-  "Msx1",
-  "Msx2",
-  "Msx3"
-)
-early_progenitor_markers = c(
-  "Hes5",
-  "Id1",
-  "Msx3",
-  "Lhx5",
-  "Pax6",
-  "Lmx1a",
-  "Msx1",
-  "Gdf7",
-  "Lhx1"
 )
 
 umap_gene_plot <- FeaturePlot(merged_seurat_obj, features = markers)
@@ -146,16 +127,21 @@ ggsave(
   bg = "white",
 )
 
-markers <- FindAllMarkers(object = merged_seurat_obj, 
+all_markers <- FindAllMarkers(object = merged_seurat_obj, 
                           only.pos = TRUE,
                           logfc.threshold = 0.25)
+all_markers$dpct <- all_markers$pct.1 - all_markers$pct.2
 
-markers %>%
+all_markers %>%
   group_by(cluster) %>%
-  slice_max(n = 20, order_by = avg_log2FC) %>%
   write.csv(
     file = paste0(results, "/", job_name, "_cluster_genes.csv")
   )
+
+markers <- FindAllMarkers(object = merged_seurat_obj, 
+                          only.pos = TRUE, 
+                          logfc.threshold = 0.25, 
+                          min.diff.pct = 0.4,)
 
 background_genes <- merged_seurat_obj@assays$SCT@data@Dimnames[1]
 background_genes %>% write.csv(file = paste0(results, "/", job_name, "_background_genes.csv"))
